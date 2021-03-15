@@ -68,7 +68,7 @@ services:
     # ...
     App\DataPersister\BlogPostDataPersister: ~
         # Uncomment only if autoconfiguration is disabled
-        #tags: [ 'api_platform.data_persister' ]
+        #tags: [ { name: 'api_platform.data_persister', priority: 1 } ]
 ```
 
 Note that if you don't need any `$context` in your data persister's methods, you can implement the [`DataPersisterInterface`](https://github.com/api-platform/core/blob/main/src/DataPersister/DataPersisterInterface.php) instead.
@@ -150,7 +150,18 @@ services:
 
 ## Calling multiple DataPersisters
 
-Our DataPersisters are called in chain, once a data persister is supported the chain breaks and API Platform assumes your data is persisted. You can call mutliple data persisters by implementing the `ResumableDataPersisterInterface`:
+Our DataPersisters are called in chain, once a data persister is supported the chain breaks and API Platform assumes your data is persisted. Be aware that Symfony decoration will inject DataPersisters in cascade, so the construction will be made like this: `new SecondDataPersister(new FirstDataPersister(new Doctrine\Common\DataPersister()))`. You can change the order using the [`decoration_priority`](https://symfony.com/doc/current/service_container/service_decoration.html#decoration-priority) configuration. If you want to change this behaviour, simply force the argument of the DataPersister:
+
+```yaml
+# api/config/services.yaml
+services:
+    # ...
+    App\DataPersister\UserDataPersister:
+        arguments: ['@api_platform.doctrine.orm.data_persister']
+        #tags: [ 'api_platform.data_persister' ]
+```
+
+You can call mutliple data persisters even if the data is persisted by implementing the `ResumableDataPersisterInterface`:
 
 ```php
 namespace App\DataPersister;
